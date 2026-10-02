@@ -5,7 +5,7 @@
 <img src="https://img.shields.io/github/release-date/itswill00/HyperUnlocked?style=flat-square&label=latest%20release&color=FF5A54&cacheSeconds=100" alt="GitHub Release Date">
 <img src="https://img.shields.io/github/downloads/itswill00/HyperUnlocked/total?style=flat-square&label=total%20downloads&color=FF5A54&cacheSeconds=100" alt="GitHub Downloads"><br>
 
-**Tanzanite-HyperUnlocked** — high-end Xiaomi features tuned for **Redmi Note 14 4G (tanzanite)**.
+**Tanzanite-HyperUnlocked**: high-end Xiaomi features tuned for **Redmi Note 14 4G (tanzanite)**.
 <br>By **@noticesa**, based on [HyperUnlocked by **ukriu**](https://github.com/ukriu/HyperUnlocked) (rebranded with permission).
 </div>
 
@@ -26,7 +26,7 @@
 Tanzanite-HyperUnlocked is a Magisk / KernelSU / APatch module that unlocks
 high-end HyperOS features on the Redmi Note 14 4G (`tanzanite`). It applies a
 curated set of system properties, `device_features` XML unlocks, and runtime
-resource overlays — with safe, non-interactive defaults so one install works
+resource overlays with safe, non-interactive defaults, so one install works
 across the whole community (HyperOS 1.0 / 2.x / 3.0).
 
 > [!NOTE]
@@ -42,7 +42,7 @@ across the whole community (HyperOS 1.0 / 2.x / 3.0).
 | System | High-end mode (`deviceLevelList v:1,c:3,g:3`), advanced blurs, smooth corners, shadows | Verified via `getprop` after install |
 | Display | Ripple charging animation, sunlight mode, expert options | Refresh rates stay native (60/90/120 Hz) |
 | Camera | Extra modes and options (4K, HFR, manual, watermark, portrait helpers, …) | App-level toggles; needs no extra hardware |
-| Gallery | Dolby/HDR/print/compress/media-feature flags | — |
+| Gallery | Dolby/HDR/print/compress/media-feature flags | Stock behavior kept where present |
 | Power & battery | Extra battery profiles and power modes, AI prediction flags | `support_power_mode` confirmed on-device |
 | Quick Settings | Mic toggle, Camera toggle, Extra Dim, Data Saver, GMS tiles | Added automatically on install |
 | Wallpapers | Super Wallpapers, video-depth marker | Overlay idmap verified active |
@@ -59,7 +59,7 @@ Dynamic Island, device level) stay available in the WebUI.
 
 > [!WARNING]
 > Other codenames are not tuned for. The installer warns and continues, but
-> results are untested — use the WebUI to adjust, at your own risk.
+> results are untested. Use the WebUI to adjust, at your own risk.
 
 Requirements:
 
@@ -67,7 +67,7 @@ Requirements:
   [Magisk](https://github.com/topjohnwu/Magisk),
   [KernelSU](https://github.com/tiann/KernelSU), APatch, or similar.
 - On KernelSU (or forks): a [metamodule](https://kernelsu.org/guide/metamodule.html).
-  A `magicmount` metamodule is recommended — some bits may break on `overlayfs`.
+  A `magicmount` metamodule is recommended. Some bits may break on `overlayfs`.
 - `Umount modules by default` must be **disabled**.
 
 ## Installation
@@ -144,10 +144,10 @@ tools/                                      # aapt/signapk/keys (CI use)
 
 ## Credits
 
-- [ukriu](https://github.com/ukriu/HyperUnlocked) — original HyperUnlocked.
+- [ukriu](https://github.com/ukriu/HyperUnlocked): original HyperUnlocked.
   Rebrand and redistribution permitted by the author; original copyright kept.
-- **@noticesa** — tanzanite tuning, structure, WebUI polish, and this variant.
-- [dvop](https://github.com/MMRLApp) — WebUI base tooling (via MMRL/KernelSU
+- **@noticesa**: tanzanite tuning, structure, WebUI polish, and this variant.
+- [dvop](https://github.com/MMRLApp): WebUI base tooling (via MMRL/KernelSU
   WebUI ecosystem).
 
 ## License
