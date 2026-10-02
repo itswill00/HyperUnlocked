@@ -1,9 +1,17 @@
-##  HyperUnlocked
-A Magisk/KernelSU/APatch module to unlock high-end features on all Xiaomi devices.
+## Tanzanite-HyperUnlocked
+High-end Xiaomi features tuned for Redmi Note 14 4G (tanzanite), by @noticesa.
+Based on HyperUnlocked by ukriu (used with permission).
 
 ---
 
 # Changelog:
+### v3.0.0
+- Rebrand to Tanzanite-HyperUnlocked (`@noticesa`), new module id and update channel.
+- Tanzanite-only install defaults with no prompts; legacy state auto-migrates.
+- Restructured `module/common/` layout; WebUI rebuilt in Vue 3.
+- Stripped placebo flags, branding flips, screen-res mod, and redundant overlays.
+- Neutral public wording; README rewritten.
+
 ### v2.3.1
 - Fix installing module in `MIUI`
 - Fix "Battery Protection" charging mode

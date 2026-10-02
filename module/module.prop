@@ -1,7 +1,7 @@
 id=Tanzanite-HyperUnlocked
 name=Tanzanite-HyperUnlocked
-version=v2.3.1
-versionCode=231
+version=v3.0.0
+versionCode=300
 author=@noticesa
 description=High-end Xiaomi features for Redmi Note 14 4G (tanzanite). Based on ukriu's HyperUnlocked.
 updateJson=https://raw.githubusercontent.com/itswill00/HyperUnlocked/main/update.json
