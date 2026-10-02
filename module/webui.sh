@@ -1,8 +1,10 @@
 #!/bin/sh
 # Copyright (C) 2025-2026 ukriu (Contact: contact@ukriu.com)
+# Tanzanite variant structure by @noticesa
 # Read LICENSE_NOTICE.txt for further info.
 
-. ./utils.sh
+MODDIR="$(cd "$(dirname "$0")" 2>/dev/null && pwd)"
+. "$MODDIR/common/utils.sh"
 CONFIG_FILE="$RESDIR/config"
 
 usage() {
@@ -29,7 +31,7 @@ is_bool() {
     [ "$1" = "true" ] || [ "$1" = "false" ]
 }
 
-# clunky ass solution :cry:
+# Simple allowlist validation for device levels.
 is_device_level() {
     case "$1" in
         default|v:1,c:1,g:1|v:1,c:1,g:2|v:1,c:1,g:3|v:1,c:2,g:1|v:1,c:2,g:2|v:1,c:2,g:3|v:1,c:3,g:1|v:1,c:3,g:2|v:1,c:3,g:3)
@@ -239,6 +241,7 @@ apply_cmd() {
         restore_deviceLevelList
         log "Device level: restored default"
     else
+        migrate_legacy_state
         save_deviceLevelList
         if ! set_device_level "$device_level"; then
             warn "Failed to apply deviceLevelList '$device_level'."
@@ -269,12 +272,11 @@ apply_cmd() {
     fi
 
     if [ "$ssblur" = "true" ]; then
-        add_ssblur
         log "Screenshot blur: enabled"
     else
-        remove_ssblur
         log "Screenshot blur: disabled"
     fi
+    set_ssblur "$ssblur"
 
     update_desc
     warning
@@ -299,9 +301,11 @@ status_cmd() {
     current_leica="$(detect_current_leica)"
     current_island="$(detect_current_island)"
 
-    # coulf be that user running script outside the module maybe
+    # the script may be running outside the module dir
     [ -n "$module_version" ] && echo "version=$module_version"
     [ -n "$module_version_code" ] && echo "versionCode=$module_version_code"
+    echo "device.codename=$(getprop ro.product.device 2>/dev/null)"
+    echo "device.os=$(getprop ro.mi.os.version.name 2>/dev/null)"
     echo "current.device_level=$current_level"
     echo "current.blur=$current_blur"
     echo "current.highend=$current_highend"

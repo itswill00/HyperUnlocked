@@ -1,27 +1,17 @@
 #!/bin/sh
 # Copyright (C) 2025-2026 ukriu (Contact: contact@ukriu.com)
+# Tanzanite variant structure by @noticesa
 # Read LICENSE_NOTICE.txt for further info.
-. ./utils.sh
+# Re-applies the tanzanite defaults (same as fresh install).
+MODDIR="$(cd "$(dirname "$0")" 2>/dev/null && pwd)"
+. "$MODDIR/common/utils.sh"
+. "$MODDIR/common/apply.sh"
 
 check_supported
-bypass_hyperos_restrict true
+check_tanzanite
 disable_incompatible_modules
-blur_choice
-highend_choice
-
-# only add island props if already enabled
-case "$(getprop persist.sys.feature.island)" in
-    ""|0|false)
-        CHOICE_ISLAND=false
-        ;;
-    *)
-        CHOICE_ISLAND=true
-        ;;
-esac
-
-define_props
-ssblur_choice
-qs_choice
+migrate_legacy_state
+apply_tanzanite_defaults
 xml_init
 update_desc
 warning
@@ -30,7 +20,7 @@ credits
 echo
 echo "[!!] A reboot is required for some changes."
 echo
-sleep 1 # let the masses read
+sleep 1 # let the output stay readable
 exit 0
 
 # EOF

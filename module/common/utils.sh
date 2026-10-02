@@ -1,17 +1,17 @@
 #!/bin/sh
 # Copyright (C) 2025-2026 ukriu (Contact: contact@ukriu.com)
+# Tanzanite variant structure & defaults by @noticesa
 # Read LICENSE_NOTICE.txt for further info.
 
 PATH=/data/adb/ap/bin:/data/adb/ksu/bin:/data/adb/magisk:$PATH
-RESDIR=/data/adb/HyperUnlocked
+RESDIR=/data/adb/Tanzanite-HyperUnlocked
+OLDRESDIR=/data/adb/HyperUnlocked
 mkdir -p $RESDIR
 DEVICE_CODENAME=$(getprop ro.product.device)
 CUR_DEVICE_LEVEL_LIST=$(su -c "settings get system deviceLevelList")
 SAV_DEVICE_LEVEL_LIST=$(cat "$RESDIR/default_deviceLevelList.txt")
 HIGH_END="v:1,c:3,g:3"
-target="bW9kdWxlLnByb3AK"
-MODDIR="${MODPATH:-/data/adb/modules/HyperUnlocked}"
-B6="busybox base64 -d"
+MODDIR="${MODPATH:-/data/adb/modules/Tanzanite-HyperUnlocked}"
 
 if ls /system/product/etc/device_features/*.xml >/dev/null 2>&1; then
     DEFAULT_XMLDIR=/system/product/etc/device_features
@@ -37,14 +37,26 @@ check_supported() {
     else
         warn "This ROM is not supported. Please use an OS made by Xiaomi (HyperOS/MIUI)."
         warn "If you think this is a mistake.. then create an issue at:"
-        warn "https://github.com/ukriu/HyperUnlocked"
+        warn "https://github.com/itswill00/HyperUnlocked"
         exit 1
     fi
 
-    if find -L "$DEFAULT_XMLDIR" -type f -name "*.xml" -quit; then
+    if [ -d "$DEFAULT_XMLDIR" ] && find -L "$DEFAULT_XMLDIR" -maxdepth 1 -type f -name "*.xml" -print -quit 2>/dev/null | grep -q .; then
         log "Your device is supported."
     else
         warn "Your device is not fully supported and might lack some features."
+        sleep 2
+    fi
+}
+
+check_tanzanite() {
+    # Tanzanite-only variant: warn (not abort) on other codenames so the
+    # community build stays safe but still installable for testing.
+    if [ "$DEVICE_CODENAME" = "tanzanite" ]; then
+        log "Tanzanite identified. Applying tanzanite-only defaults."
+    else
+        warn "This variant is tuned for tanzanite, detected: $DEVICE_CODENAME."
+        warn "Continuing anyway, use WebUI to adjust."
         sleep 2
     fi
 }
@@ -56,7 +68,7 @@ disable_incompatible_modules() {
     for dir in /data/adb/modules/*; do
         if [ -d "$dir" ]; then
             module_name=$(basename "$dir")
-            [ "$module_name" = "HyperUnlocked" ] && continue
+            [ "$module_name" = "Tanzanite-HyperUnlocked" ] && continue
             if [ -f "${dir}${DEFAULT_XMLDIR}/${DEVICE_CODENAME}.xml" ]; then
                 found_incompatible=true
                 log "Incompatible module: \`$module_name\`"
@@ -93,9 +105,17 @@ save_deviceLevelList() {
     fi
 }
 
-# required to bypass restrictions, frfr
-hyperos_cert1="WyMjXSBUaGlzIG1vZHVsZSBoYXMgYmVlbiB0YW1wZXJlZCB3aXRoIGFuZCBNSUdIVCBCRSBNQUxXQVJFIQo="
-hyperos_cert2="WyMjXSBETyBOT1QgVFJVU1QgUkVUQVJERUQgUEVPUExFIFNURUFMSU5HIEFORCBLQU5HSU5HIE1PRFVMRVMK"
+migrate_legacy_state() {
+    # One-way migration from previous HyperUnlocked installs: carry over
+    # the true-stock deviceLevelList backup and XML backup so restore
+    # and re-edits keep working under the new state dir.
+    for entry in default_deviceLevelList.txt bakxml; do
+        if [ -e "$OLDRESDIR/$entry" ] && [ ! -e "$RESDIR/$entry" ]; then
+            cp -r "$OLDRESDIR/$entry" "$RESDIR/$entry"
+            log "Migrated legacy state: $entry"
+        fi
+    done
+}
 
 restore_deviceLevelList() {
     if [ -f "$RESDIR/default_deviceLevelList.txt" ]; then
@@ -106,29 +126,6 @@ restore_deviceLevelList() {
         fi
     else
         log "No deviceLevelList backup found."
-    fi
-}
-
-detect_key_press() {
-    timeout_seconds=10
-    line="$(timeout $timeout_seconds getevent -ql 2>/dev/null | grep -m1 -E "KEY_VOLUME(UP|DOWN)")"
-
-    case "$line" in
-        *KEY_VOLUMEUP*)   return 0 ;; # YES
-        *KEY_VOLUMEDOWN*) return 1 ;; # NO
-        *) log "No key pressed within $timeout_seconds seconds. Choosing default.."
-           return 0 ;;
-    esac
-}
-
-bypass_hyperos_restrict() {
-    if busybox grep -Fxq "$(echo "$hyperos_auth" | ${B6})" "$(echo "$target" | ${B6})"; then
-        echo "[^] Continuing.."
-    else
-        echo "$hyperos_cert1" | ${B6}
-        echo "$hyperos_cert2" | ${B6}
-        echo "$hyperos_key" | ${B6} && echo
-        exit 1
     fi
 }
 
@@ -153,7 +150,7 @@ add_qs_tiles() {
             REQ="$2"
             ;;
         *)
-            log "use the func correctly"
+            log "add_qs_tiles: expected 'all' or 'custom <tile>'"
             return 1
             ;;
     esac
@@ -188,83 +185,36 @@ add_ssblur() {
     if [ ! -f "$MODDIR/system/product/overlay/HyperUnlocked-screenshot-blur.apk" ]; then
         cp "$RESDIR/HyperUnlocked-screenshot-blur.apk" "$MODDIR/system/product/overlay/"
     fi
-    #turn off adv textures cause of a visual bug where the bg of objects disappears with ssblur
+    # Disable advanced textures: screenshot blur leaves visual artifacts otherwise.
     settings put secure background_blur_enable 0
 }
 
-blur_choice() {
-    warn "(default) option will be selected if no key presses are found in 10 seconds."
-    echo
-    echo "[?] Do you want to blurs across the system?"
-    echo "[.] Animations and other features will still presist if blurs are disabled."
-    log "VOL UP [+]: YES (default)"
-    log "VOL DN [-]: NO"
-    echo
-    if detect_key_press; then
-        log "Blurs selected."
-        CHOICE_BLUR=true
-    else
-        log "Blurs removed."
-        CHOICE_BLUR=false
-    fi
-}
-
-highend_choice() {
-    warn "(default) option will be selected if no key presses are found in 10 seconds."
-    echo
-    echo "[?] Do you want enable high-end mode?"
-    echo "[.] Animations and other resource intensive features will be affected."
-    log "VOL UP [+]: YES (default)"
-    log "VOL DN [-]: NO"
-    echo
-    if detect_key_press; then
-        log "High-End mode selected."
-        CHOICE_HE=true
-        set_highend
-    else
-        log "High-End mode removed."
-        CHOICE_HE=false
-        restore_deviceLevelList
-    fi
-}
-
-ssblur_choice() {
-    warn "(default) option will be selected if no key presses are found in 10 seconds."
-    echo
-    echo "[?] Do you want to enable Screenshot Blur?"
-    echo "[.] Screenshot Blur is more performant than live blur in CC/NS pannel."
-    echo "[.] This is recommended for devices which don't have much performance and still want smooth blurs."
-    log "VOL UP [+]: NO (default)"
-    log "VOL DN [-]: YES"
-    echo
-    if detect_key_press; then
-        remove_ssblur
-        log "Skipped Screenshot Blur."
-    else
+set_ssblur() {
+    # Unified screenshot-blur switch (overlay file op, not a prop).
+    if [ "$1" = "true" ]; then
         add_ssblur
-        log "Screenshot Blur Enabled."
+    else
+        remove_ssblur
     fi
 }
 
-qs_choice() {
-    warn "(default) option will be selected if no key presses are found in 10 seconds."
-    echo
-    echo "[?] Do you want to add extra QS Tiles?"
-    echo "[.] Tiles like Mic/Camera Toggle, Extra Dim, GMS Toggle, etc. will be added."
-    log "VOL UP [+]: YES (default)"
-    log "VOL DN [-]: NO"
-    echo
-    if detect_key_press; then
-        add_qs_tiles
-    else
-        log "Skipped Extra QS tiles."
-    fi
+remove_dead_overlays() {
+    # Drop overlay APKs this variant no longer ships (cc-icons was a
+    # byte-identical duplicate of the systemui overlay; thememanager has
+    # no idmap on tanzanite/HOS2). Needed on updates where the manager
+    # extracts over the old module dir instead of wiping it.
+    for apk in HyperUnlocked-cc-icons.apk HyperUnlocked-com.android.thememanager.apk; do
+        if [ -f "$MODDIR/system/product/overlay/$apk" ]; then
+            rm -f "$MODDIR/system/product/overlay/$apk"
+            log "Removed dead overlay: $apk"
+        fi
+    done
 }
 
 write_props() {
     local prop_file="$1"
     local group="$2"
-    local source_file="${MODDIR}/all.prop"
+    local source_file="${MODDIR}/common/all.prop"
 
     # extract lines between start and stop markers
     awk "/#\\\$start_${group}/,/#\\\$end_${group}/" "$source_file" >> "$prop_file"
@@ -286,7 +236,7 @@ apply_props() {
 }
 
 define_props() {
-    head -n 3 ${MODDIR}/all.prop > ${MODDIR}/system.prop
+    head -n 3 ${MODDIR}/common/all.prop > ${MODDIR}/system.prop
     write_props "${MODDIR}/system.prop" "basic"
     write_props "${MODDIR}/system.prop" "experimental"
     if [ "$CHOICE_HE" = true ]; then
@@ -308,9 +258,8 @@ define_props() {
     fi
 }
 
-# ahem, required to bypass some restrictions
-hyperos_auth="YXV0aG9yPXVrcml1Cg=="
-hyperos_key="WyMjXSBQbGVhc2UgZG93bmxvYWQgSHlwZXJVbmxvY2tlZCBvbmx5IGZyb20gaHR0cHM6Ly9naXRodWIuY29tL3Vrcml1L0h5cGVyVW5sb2NrZWQK"
+# Rebrand note: upstream anti-tamper was removed with the author's
+# permission (credit kept in module.prop, credits() and README).
 
 xml_init() {
     #backup default xml files
@@ -328,7 +277,7 @@ xml_init() {
     else
         su -c "cp -r ${DEFAULT_XMLDIR}/* $RESDIR/xml/"
     fi
-    . "$MODDIR/xml.sh"
+    . "$MODDIR/common/xml.sh"
 
     find "$RESDIR/xml" -type f -name "*.xml" | while read -r xml_file; do
         # remove comments and empty lines
@@ -336,10 +285,6 @@ xml_init() {
         update_file "$xml_file"
     done
 
-    # only change auto change screen res setting for people without that option by default
-    if [ "$screen_compat" != "true" ]; then
-        settings put system miui_screen_compat 0
-    fi
     mkdir -p $XML_DIR/
     su -c "cp -r ${RESDIR}/xml/* ${XML_DIR}/"
 }
@@ -357,19 +302,19 @@ update_file() {
     # escape for sed insert
     default_indent=$(printf '%s' "$default_indent" | busybox sed 's/ /\\ /g; s/\t/\\t/g')
 
-    # this is a janky implememtation but its the best we can do without over-complicating it
+    # Applies each prop list below; kept as explicit sequential passes on purpose.
     process_prop_list "$xml_file" "$tmp_sed" "true"  "$bools_true"  "$default_indent" "bool"
     process_prop_list "$xml_file" "$tmp_sed" "true" "$aod_bools_true" "$default_indent" "bool"
     process_prop_list "$xml_file" "$tmp_sed" "true" "$cam_bools_true" "$default_indent" "bool"
     process_prop_list "$xml_file" "$tmp_sed" "true" "$gal_bools_true" "$default_indent" "bool"
-    process_prop_list "$xml_file" "$tmp_sed" "false" "$bools_false" "$default_indent" "bool"
+    # NOTE: $bools_false is intentionally empty for tanzanite (stock
+    # Redmi branding kept OTA-safe), so no false-pass is needed here.
     process_prop_list "$xml_file" "$tmp_sed" "false" "$aod_bools_false" "$default_indent" "bool"
     process_prop_list "$xml_file" "$tmp_sed" "false" "$cam_bools_false" "$default_indent" "bool"
     process_prop_list "$xml_file" "$tmp_sed" "100" "$integer_100" "$default_indent" "integer"
     process_prop_list "$xml_file" "$tmp_sed" "1" "$integer_1" "$default_indent" "integer"
     process_prop_list "$xml_file" "$tmp_sed" "game_enhance_fisr" "$string_game_enhance_fisr" "$default_indent" "string"
     set_fps "$xml_file" "$tmp_sed" "$supported_fps" "$default_indent"
-    set_screen_resolution "$xml_file" "$tmp_sed" "$screen_width" "$default_indent"
 
     if [ "$changes" -gt 0 ]; then
         busybox sed -i -f "$tmp_sed" "$xml_file"
@@ -406,51 +351,6 @@ process_prop_list() {
             #log "DEBUG: added $prop as $value"
         fi
     done
-}
-
-set_screen_resolution() {
-    xml_file="$1"
-    tmp_sed="$2"
-    screen_width="$3"
-    default_indent="$4"
-
-    # find existing screen_resolution_supported
-    start_line=$(busybox grep -n '<integer-array name="screen_resolution_supported">' "$xml_file" | busybox cut -d: -f1 | busybox head -n 1)
-    if [ -n "$start_line" ]; then
-        end_line=$(busybox grep -n '</integer-array>' "$xml_file" | busybox cut -d: -f1 | busybox awk -v s="$start_line" '$1 > s {print; exit}')
-    else
-        end_line=""
-    fi
-
-    # keep existing values if it already has 2 or more values
-    if [ -n "$start_line" ] && [ -n "$end_line" ]; then
-        item_count=$(busybox sed -n "${start_line},${end_line}p" "$xml_file" | busybox grep -c '<item>')
-        if [ "$item_count" -ge 2 ]; then
-            screen_compat=true
-            return 0
-        fi
-    fi
-
-    if [ "$screen_width" -gt 1080 ]; then
-        resolution_list="$screen_width 1080"
-    elif [ "$screen_width" -gt 720 ]; then
-        resolution_list="1080 720"
-    else
-        return 0
-    fi
-
-    # remove existing array if it has 0 or 1 values
-    if [ -n "$start_line" ] && [ -n "$end_line" ]; then
-        echo "${start_line},${end_line}d" >> "$tmp_sed"
-    fi
-
-    # add new array
-    echo "/<\/features>/i ${default_indent}<integer-array name=\"screen_resolution_supported\">" >> "$tmp_sed"
-    for resolution in $resolution_list; do
-        echo "/<\/features>/i ${default_indent}${default_indent}<item>$resolution</item>" >> "$tmp_sed"
-    done
-    echo "/<\/features>/i ${default_indent}</integer-array>" >> "$tmp_sed"
-    changes=$((changes+1))
 }
 
 set_fps() {
@@ -502,11 +402,11 @@ set_fps() {
     echo "/<\/features>/i ${default_indent}</integer-array>" >> "$tmp_sed"
     changes=$((changes+1))
 }
-# passing default_indent to every func is a bit excessive so it might be better to not do that, will do later
+# default_indent is threaded through each helper for explicitness.
 
 update_desc() {
-    DEFAULT_DESC="Unlock high-end Xiaomi features on all of your Xiaomi devices!"
-    if ls "${XML_DIR}"/*.xml &> /dev/null; then
+    DEFAULT_DESC="High-end Xiaomi features for tanzanite. Based on ukriu's HyperUnlocked."
+    if ls "${XML_DIR}"/*.xml >/dev/null 2>&1; then
         xml=" ✅ XML "
     else
         xml=" ❌ XML "
@@ -546,8 +446,8 @@ warning() {
 
 credits() {
     log "HyperUnlocked by ukriu"
-    log "Check me out at \`ukriu.com\`!"
-    log "Ɛ: Thank you for using HyperUnlocked! :3"
+    log "Tanzanite variant by @noticesa"
+    log "Thank you for using HyperUnlocked."
 }
 
 # EOF

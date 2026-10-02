@@ -1,36 +1,24 @@
 #!/bin/sh
 # Copyright (C) 2025-2026 ukriu (Contact: contact@ukriu.com)
+# Tanzanite variant structure by @noticesa
 # Read LICENSE_NOTICE.txt for further info.
 if ! $BOOTMODE; then
     ui_print "*********************************************************"
     ui_print "Installing from recovery is not recommended!"
-    ui_print "The installation will continue, but it is recommened to click the action button in the manager to finish the setup!"
+    ui_print "The installation will continue, but it is recommended to click the action button in the manager to finish the setup!"
     ui_print "*********************************************************"
 fi
 
 export MODPATH
-. $MODPATH/utils.sh
+. $MODPATH/common/utils.sh
+. $MODPATH/common/apply.sh
 
 check_supported
-bypass_hyperos_restrict true
+check_tanzanite
 disable_incompatible_modules
+migrate_legacy_state
 save_deviceLevelList
-blur_choice
-highend_choice
-ssblur_choice
-
-# only add island props on initial install if already enabled
-case "$(getprop persist.sys.feature.island)" in
-    ""|0|false)
-        CHOICE_ISLAND=false
-        ;;
-    *)
-        CHOICE_ISLAND=true
-        ;;
-esac
-
-define_props
-qs_choice
+apply_tanzanite_defaults
 xml_init
 update_desc
 warning

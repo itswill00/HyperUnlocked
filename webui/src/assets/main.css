@@ -1,5 +1,6 @@
-/* 
+/*
 # Copyright (C) 2025-2026 ukriu (Contact: contact@ukriu.com)
+# Tanzanite variant port by @noticesa
 # Read LICENSE_NOTICE.txt for further info.
 */
 
@@ -43,6 +44,13 @@ main {
     margin: 8px 0 0;
     color: var(--color-on-surface-variant);
     font-size: 0.9rem;
+}
+
+.tagline {
+    margin: 4px 0 0;
+    color: var(--color-on-surface-variant);
+    font-size: 0.8rem;
+    opacity: 0.8;
 }
 
 .card {
@@ -89,6 +97,8 @@ main {
     background: var(--color-surface-variant);
     cursor: pointer;
     transition: background 0.2s ease;
+    margin: 0;
+    flex-shrink: 0;
 }
 
 .switch::after {
@@ -221,6 +231,7 @@ button {
     margin: 10px 0 0;
     color: var(--color-on-surface-variant);
     font-size: 0.88rem;
+    white-space: pre-line;
 }
 
 .modal-actions {
@@ -230,10 +241,6 @@ button {
 main.blurred {
     filter: blur(4px);
     transition: filter 0.2s ease;
-}
-
-#warningModalDescription {
-    white-space: pre-line;
 }
 
 ::selection {

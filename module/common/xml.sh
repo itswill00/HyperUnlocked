@@ -1,9 +1,9 @@
 #!/bin/sh
 # Copyright (C) 2025-2026 ukriu (Contact: contact@ukriu.com)
+# Tanzanite variant strip by @noticesa
 # Read LICENSE_NOTICE.txt for further info.
 
 supported_fps="$(dumpsys display | grep -oE "fps=[0-9.]+" | cut -d= -f2 | awk -F. '{print $1}' | sort -nu | xargs)"
-screen_width="$(wm size | sed -n 's/Physical size: \([0-9]*\)x.*/\1/p')"
 
 cam_bools_true="
 camera_adjust_picture_size_enabled
@@ -40,7 +40,6 @@ support_camera_peaking_mf
 support_camera_press_down_capture
 support_camera_quick_snap
 support_camera_record_location
-support_camera_satellite
 support_camera_shader_effect
 support_camera_skin_beauty
 support_camera_square_mode
@@ -59,7 +58,6 @@ support_realtime_manual_exposure_time
 support_screen_effect
 support_screen_light
 support_video_hfr_mode
-by_ukriu
 "
 
 cam_bools_false="
@@ -86,14 +84,11 @@ support_local_ocr
 bools_true="
 btdebug_enabled
 config_sunlight_mode_available
-enable_flash_global
-enable_miui_lite
 enhance_beauty_with_hht
 is_compatible_paper_and_screen_effect
 is_default_temporary_style
 is_support_partial_screenshot
 is_support_video_tool_box
-is_xiaomi
 is_xiaomi_device
 support_24bit_record
 support_AI_display
@@ -114,8 +109,6 @@ support_decrease_brightness_spec_app
 support_display_expert_mode
 support_displayfeature_gamemode
 support_displayfeature_gamemode_HDR
-support_dolby
-support_dolby_version_brighten
 support_erase_external_storage
 support_feedback_level
 support_fm
@@ -133,8 +126,6 @@ support_hdr_hbm_brighten
 support_headset
 support_hfr_video_pause
 support_hide_discoverable
-support_hifi
-support_high_resolution
 support_idle_dim
 support_interview_record_param
 support_lhdc_offload
@@ -174,8 +165,6 @@ support_tap_fingerprint_sensor_to_home
 support_torch
 support_touch_sensitive
 support_touchfeature_gamemode
-support_true_color
-support_truetone
 support_ui_orientation_v2
 support_videobox_cinema_adapt_ce
 support_videobox_display_effect
@@ -184,9 +173,8 @@ support_wild_boost
 support_wild_boost_bat_perf
 "
 
-bools_false="
-is_hongmi
-"
+# tanzanite-only: keep stock is_hongmi/is_redmi branding (OTA-safe), do not flip.
+bools_false=""
 aod_bools_true="
 aod_support_keycode_goto_dismiss
 is_video_screen
@@ -196,10 +184,6 @@ support_aod_fullscreen
 "
 aod_bools_false="
 is_only_support_keycode_goto
-"
-nfc_related_bools_true="
-support_nfc
-support_se_route
 "
 integer_100="burst_shoot_count"
 integer_1="support_inner_record support_widevine_l1"
